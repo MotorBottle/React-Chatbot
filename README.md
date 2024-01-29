@@ -1,6 +1,6 @@
 # React-Chatbot
 
-Clone of ChatGPT as a practise for learning front-end things.
+Clone of ChatGPT as a practice for learning front-end things.
 
 
 ## Involved Tools
