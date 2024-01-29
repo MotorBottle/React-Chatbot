@@ -2,6 +2,7 @@
 
 Clone of ChatGPT as a practice for learning front-end things.
 
+To use: Add your openAI API key and MongoDB key into ".env.example" and rename it into ".env". Then run "node index.js" in root path and open another terminal then run "cd client" then "npm start". Remember to install related packages before you run the project. Enjoy~
 
 ## Involved Tools
 
