@@ -42,6 +42,7 @@
   /* border: 1px solid white; */
   justify-content: space-between;
   background-color: #030303;
+  overflow: visible;
 }
 
 .app-main-title {
@@ -75,6 +76,7 @@
 }
 
 .session-list {
+  position: relative;
   padding-left: 10px;
   padding-right: 10px;
   position: relative;
@@ -170,10 +172,6 @@
   background-color: #343541;
 }
 
-/* .session-item.active:hover .fade-mask {
-  background-image: linear-gradient(to right, transparent, #343541 100%);
-} */
-
 .session-actions {
   align-items: center;
   display: flex;
@@ -190,6 +188,11 @@
   overflow: hidden;
 }
 
+.edit-name-button:hover, .more-functions-button:hover {
+  opacity: 50%;
+  transition: opacity 0.08s ease;
+}
+
 .more-functions-button {
   position: relative;
   height: 100%;
@@ -200,13 +203,52 @@
   overflow: hidden;
 }
 
-.edit-name-button:hover, .more-functions-button:hover {
-  opacity: 50%;
-  transition: opacity 0.08s ease;
+.more-actions-popup {
+  position: absolute;
+  right: 6px;
+  /* bottom: 100%; */
+  background: #2b2c35;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.more-actions-popup ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.more-actions-popup li {
+  padding: 10px;
+  border-bottom: 1px solid #434553;
+  cursor: pointer;
+}
+
+.more-actions-popup li:last-child {
+  border-bottom: none;
+}
+
+.more-actions-popup li:hover {
+  background: #434553;
+}
+
+.more-actions-popup li:first-child:hover {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.more-actions-popup li:last-child:hover {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .profile-space, .profile-space * {
   box-sizing: border-box;
+}
+
+.chat-delet-action {
+  color: red;
 }
 
 

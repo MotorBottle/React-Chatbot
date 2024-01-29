@@ -1,7 +1,7 @@
 import logo from './logo.svg';
 import './normal.css';
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 
 function App() {
@@ -13,6 +13,9 @@ function App() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
+  const [showMoreActions, setShowMoreActions] = useState(false);
+  const [selectedSessionForActions, setSelectedSessionForActions] = useState(null);
+  const moreActionsRef = useRef(null);
 
 
   // Function for session-list
@@ -20,8 +23,11 @@ function App() {
     setIsHovered(sessionId);
   };
   
-  const handleMouseLeave = () => {
-    setIsHovered(null);
+  const handleMouseLeave = (sessionId) => {
+    // Close the hover state only if the more actions menu is not showing for this session
+    if (selectedSessionForActions !== sessionId) {
+      setIsHovered(null);
+    }
   };
 
   // Function to enter title edit mode
@@ -97,8 +103,36 @@ function App() {
   
   const handleMoreFunctionsClick = (e, sessionId) => {
     e.stopPropagation();
-    // Implement logic to show more functions (delete, archive) here
+    if (selectedSessionForActions === sessionId) {
+      setShowMoreActions(!showMoreActions);
+    } else {
+      setSelectedSessionForActions(sessionId);
+      setShowMoreActions(true);
+    }
   };
+
+  const handleClickOutside = (event) => {
+    if (moreActionsRef.current && !moreActionsRef.current.contains(event.target)) {
+      closeMoreActions();
+    }
+  };
+
+  // Close the more actions menu when clicking outside of it
+  const closeMoreActions = () => {
+    setShowMoreActions(false);
+    setSelectedSessionForActions(null);
+    setIsHovered(null); // Add this line to reset hover state when closing the actions menu
+  };
+
+  useEffect(() => {
+    // Attach the listeners on component mount.
+    document.addEventListener('click', handleClickOutside, true);
+    
+    // Detach the listeners on component unmount.
+    return () => {
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+  }, []);
 
   useEffect(() => {
     fetchSessions();
@@ -222,39 +256,48 @@ function App() {
             key={session._id}
             className={`session-item ${activeSession === session._id ? "active" : ""}`}
             onMouseEnter={() => handleMouseEnter(session._id)}
-            onMouseLeave={handleMouseLeave}
-          >
-            {editingSessionId === session._id ? (
-              <input
-              autoFocus
-              value={editingTitle}
-              onChange={(e) => setEditingTitle(e.target.value)}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyPress}
-              className="title-edit-input"
-              />
-            ) : (
-              <span
-                className="session-title"
-                onClick={() => handleSessionClick(session._id)}
-              >
-                {session.title}
-                <div className="fade-mask"></div>
-              </span>
-            )}
-            
-            {/* Conditionally render edit and more buttons */}
-            {((isHovered === session._id || activeSession === session._id) && editingSessionId !== session._id) && (
-              <div className="session-actions">
-                <div className="edit-name-button" onClick={() => handleEditNameClick(session._id, session.title)}>
-                  <svg t="1706429867923" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7518" width="16" height="16"><path d="M554.666667 128v85.333333H213.333333v597.333334h597.333334v-341.333334h85.333333v341.333334a85.333333 85.333333 0 0 1-85.333333 85.333333H213.333333a85.333333 85.333333 0 0 1-85.333333-85.333333V213.333333a85.333333 85.333333 0 0 1 85.333333-85.333333h341.333334zM397.994667 568.661333l426.666666-426.666666 60.373334 60.373333-426.666667 426.666667-60.373333-60.373334z" fill="#ececf1" p-id="7519"></path></svg>
+            onMouseLeave={() => handleMouseLeave(session._id)}
+            >
+              {editingSessionId === session._id ? (
+                <input
+                autoFocus
+                value={editingTitle}
+                onChange={(e) => setEditingTitle(e.target.value)}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyPress}
+                className="title-edit-input"
+                />
+              ) : (
+                <span
+                  className="session-title"
+                  onClick={() => handleSessionClick(session._id)}
+                >
+                  {session.title}
+                  <div className="fade-mask"></div>
+                </span>
+              )}
+              
+              {/* Conditionally render edit and more buttons */}
+              {((isHovered === session._id || activeSession === session._id) && editingSessionId !== session._id) && (
+                <div className="session-actions">
+                  <div className="edit-name-button" onClick={() => handleEditNameClick(session._id, session.title)}>
+                    <svg t="1706429867923" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7518" width="16" height="16"><path d="M554.666667 128v85.333333H213.333333v597.333334h597.333334v-341.333334h85.333333v341.333334a85.333333 85.333333 0 0 1-85.333333 85.333333H213.333333a85.333333 85.333333 0 0 1-85.333333-85.333333V213.333333a85.333333 85.333333 0 0 1 85.333333-85.333333h341.333334zM397.994667 568.661333l426.666666-426.666666 60.373334 60.373333-426.666667 426.666667-60.373333-60.373334z" fill="#ececf1" p-id="7519"></path></svg>
+                  </div>
+                  <div className="more-functions-button" onClick={(e) => handleMoreFunctionsClick(e, session._id)}>
+                    <svg t="1706429736531" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6301" width="18" height="18"><path d="M243.2 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6302"></path><path d="M512 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6303"></path><path d="M780.8 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6304"></path></svg>
+                  </div>
+                  {showMoreActions && selectedSessionForActions === session._id && (
+                    <div className="more-actions-popup" ref={moreActionsRef}>
+                      <ul>
+                        <li>Recategorize</li>
+                        <li>Share</li>
+                        <li className="chat-delet-action">Delete Chat</li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
-                <div className="more-functions-button" onClick={(e) => handleMoreFunctionsClick(e, session._id)}>
-                  <svg t="1706429736531" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="6301" width="18" height="18"><path d="M243.2 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6302"></path><path d="M512 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6303"></path><path d="M780.8 512m-83.2 0a1.3 1.3 0 1 0 166.4 0 1.3 1.3 0 1 0-166.4 0Z" fill="#ececf1" p-id="6304"></path></svg>
-                </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
           ))}
         </div>
         <div className="profile-space">
