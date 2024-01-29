@@ -1,43 +1,49 @@
 # React-Chatbot
 
-Clone of ChatGPT as a practice for learning front-end things.
+A ChatGPT clone implemented as a front-end learning project.
 
-To use: Add your openAI API key and MongoDB key into ".env.example" and rename it into ".env". Then run "node index.js" in root path and open another terminal then run "cd client" then "npm start". Remember to install related packages before you run the project. Enjoy~
+## Getting Started
 
-## Involved Tools
+To use: 
 
-React
+1. **Set Up Environment Variables**
+   - Copy the contents of `.env.example` to a new file named `.env`.
+   - Fill in your OpenAI API key and MongoDB connection string in the `.env` file.
 
-MongoDB
+2. **Install packages**
+    - Remember to install related packages before you run the project. 
 
-Express
+3. **Start the Application**
+   - In the root directory, start the server with `node index.js`.
+   - Open a new terminal, navigate to the client directory (`cd client`), and start the React app with `npm start`.
 
-## Development Progress
+4. **Enjoy interacting with your own chatbot~**
+
+## Features
+
+### Involved Tools
+
+- **React:** For building the user interface.
+- **MongoDB:** Used for storing conversation histories.
+- **Express:** Powers the backend server.
+
+### Development Progress
 
 ![Alt text](image.png)
 
-### Done
+#### Completed Features
 
-Basic UI
+- Basic User Interface
+- Fundamental chat functionality
+- Ability to view and continue previous conversations
 
-Basic chat function
+#### In Progress
 
-View and continue previous conversation
-
-### On Going
-
-Edit Title/Category
-
-Delete Conversation
-
-Model Switch
-
-Copy2Clipboard
-
-Regenerate and Branching
-
-Catergory View in Sidebar
-
-Category recommandations
-
-Visual Branch Management
+- Editing titles and categories for conversations
+- Deleting conversations
+- Switching between different models
+- Copying conversation to clipboard
+- Regenerating responses and branching conversations
+- Displaying categories in the sidebar
+- Providing category recommendations
+- Implementing visual branch management for conversation flows
