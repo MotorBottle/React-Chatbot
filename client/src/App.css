@@ -145,7 +145,7 @@
   right: 0;
   top: 0;
   width: 1.5rem;
-  background-image: linear-gradient(to left, transparent, #343541 100%);
+  /* background-image: linear-gradient(to left, transparent, #343541 100%); */
 }
 
 .session-item.active .fade-mask {
@@ -165,9 +165,9 @@
   background-color: #343541;
 }
 
-.session-item.active:hover .fade-mask {
+/* .session-item.active:hover .fade-mask {
   background-image: linear-gradient(to right, transparent, #343541 100%);
-}
+} */
 
 .session-actions {
   align-items: center;
