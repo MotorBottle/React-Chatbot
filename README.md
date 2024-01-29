@@ -36,10 +36,11 @@ To use:
 - Basic User Interface
 - Fundamental chat functionality
 - Ability to view and continue previous conversations
+- Editing titles for exsiting conversations
 
 #### In Progress
 
-- Editing titles and categories for conversations
+- Editing categories for conversations
 - Deleting conversations
 - Switching between different models
 - Copying conversation to clipboard
