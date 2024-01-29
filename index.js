@@ -18,7 +18,7 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 const chatSessionSchema = new mongoose.Schema({
   title: { type: String, default: 'New Chat' },
   category: { type: String, default: 'Instant Chat' },
-  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
   messages: [{ role: String, content: String }],
 });
 
@@ -32,7 +32,7 @@ const port = 3080;
 // Fetch Sessions
 app.get('/sessions', async (req, res) => {
   try {
-    const chatSessions = await ChatSession.find({}, 'title _id createdAt').sort({ createdAt: -1 });
+    const chatSessions = await ChatSession.find({}, 'title _id updatedAt').sort({ updatedAt: -1 });
     res.json(chatSessions);
   } catch (error) {
     console.error('Error fetching chat sessions:', error);
@@ -45,7 +45,7 @@ app.post('/new-session', async (req, res) => {
   const { title, category } = req.body;
   const newSession = new ChatSession({ title, category });
   await newSession.save();
-  res.json({ id: newSession._id, title: newSession.title, category: newSession.category, createdAt: newSession.createdAt });
+  res.json({ id: newSession._id, title: newSession.title, category: newSession.category, updatedAt: newSession.updatedAt });
 });
 
 // Post Message
@@ -72,6 +72,9 @@ app.post('/message', async (req, res) => {
     messages.push({ role: "assistant", content: botReply });
 
     session.messages = messages;
+
+    session.updatedAt = new Date();
+
     await session.save();
 
     res.json({ reply: botReply, sessionId: session._id });

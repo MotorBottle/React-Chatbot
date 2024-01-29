@@ -82,7 +82,30 @@
   /* margin-top: 14px; */
   max-height: calc(100% - 154px);
   flex-grow: 1;
-  overflow-y: auto;
+  overflow-y: scroll;
+}
+
+.session-list::-webkit-scrollbar {
+  width: 7px;
+}
+
+.session-list::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 5px;
+}
+
+.session-list:hover::-webkit-scrollbar-thumb {
+  background-color: #666666bd;
+}
+
+.session-list::-webkit-scrollbar-track {
+  background: #f1f1f100; /* 轨道的颜色 */
+  border-radius: 5px;  /* 轨道的圆角 */
+}
+
+/* 当滑块悬停时 */
+.session-list:hover::-webkit-scrollbar-thumb:hover {
+  background: #919191d5; /* 滑块的颜色在悬停时 */
 }
 
 .session-item {
@@ -261,26 +284,26 @@
 }
 
 /* 滚动条整体部分 */
-::-webkit-scrollbar {
+.chat-log::-webkit-scrollbar {
   width: 7px;  /* 滚动条的宽度 */
   height: 7px; /* 滚动条的高度，对于水平滚动条而言 */
 }
 
 /* 滚动条滑块 */
-::-webkit-scrollbar-thumb {
-  background: #666666c2;  /* 滑块的颜色 */
-  border-radius: 5px; /* 滑块的圆角 */
+.chat-log::-webkit-scrollbar-thumb {
+  background: #9e9e9e8e;
+  border-radius: 5px;
 }
 
 /* 滚动条轨道 */
-::-webkit-scrollbar-track {
-  background: #f1f1f100; /* 轨道的颜色 */
-  border-radius: 5px;  /* 轨道的圆角 */
+.chat-log::-webkit-scrollbar-track {
+  background: #f1f1f100;
+  border-radius: 5px;
 }
 
 /* 当滑块悬停时 */
-::-webkit-scrollbar-thumb:hover {
-  background: #646464; /* 滑块的颜色在悬停时 */
+.chat-log::-webkit-scrollbar-thumb:hover {
+  background: #b1b1b1b4;
 }
 
 .chat-message {
