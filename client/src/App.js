@@ -5,13 +5,16 @@ import React, { useState, useEffect } from 'react';
 
 
 function App() {
-
   const [input, setInput] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [activeSession, setActiveSession] = useState(null);
   const [isHovered, setIsHovered] = useState(null);
+  const [editingSessionId, setEditingSessionId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
+
+  // Function for session-list
   const handleMouseEnter = (sessionId) => {
     setIsHovered(sessionId);
   };
@@ -20,9 +23,69 @@ function App() {
     setIsHovered(null);
   };
 
-  const handleEditNameClick = (e, sessionId) => {
-    e.stopPropagation();
-    // Implement renaming logic here
+  // Function to enter title edit mode
+  const handleEditNameClick = (sessionId, currentTitle) => {
+    setEditingSessionId(sessionId);
+    setEditingTitle(currentTitle);
+  };
+
+  // Function to save new title
+  const handleConfirmEdit = async () => {
+    if (editingSessionId && editingTitle.trim() !== "") {
+      // Update the session title in the local state
+      const updatedSessions = sessions.map((session) =>
+        session._id === editingSessionId ? { ...session, title: editingTitle } : session
+      );
+      setSessions(updatedSessions);
+  
+      // Send the update to the server
+      try {
+        const response = await fetch(`http://localhost:3080/sessions/${editingSessionId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ title: editingTitle }),
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to update session title');
+        }
+  
+        const updatedSession = await response.json();
+
+        const updatedSessions = sessions.map((session) =>
+          session._id === editingSessionId ? updatedSession : session
+        );
+        setSessions(updatedSessions);
+  
+        console.log('Session title updated successfully');
+      } catch (error) {
+        console.error('Error updating session title:', error);
+      }
+    }
+  
+    // Exit edit mode
+    setEditingSessionId(null);
+    setEditingTitle(""); // Reset the editing title
+  };
+
+  // Function to cancel editing
+  const handleCancelEdit = () => {
+    setEditingSessionId(null);
+    setEditingTitle("");
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleConfirmEdit();
+    } else if (event.key === 'Escape') {
+      handleCancelEdit();
+    }
+  };
+
+  const handleBlur = () => {
+    handleConfirmEdit();
   };
   
   const handleMoreFunctionsClick = (e, sessionId) => {
@@ -153,17 +216,30 @@ function App() {
             className={`session-item ${activeSession === session._id ? "active" : ""}`}
             onMouseEnter={() => handleMouseEnter(session._id)}
             onMouseLeave={handleMouseLeave}
-            onClick={() => handleSessionClick(session._id)}
           >
-            <span className="session-title">
-              {session.title}
-              <div className="fade-mask"></div>
-            </span>
+            {editingSessionId === session._id ? (
+              <input
+              autoFocus
+              value={editingTitle}
+              onChange={(e) => setEditingTitle(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyPress}
+              className="session-edit-input"
+              />
+            ) : (
+              <span
+                className="session-title"
+                onClick={() => handleSessionClick(session._id)}
+              >
+                {session.title}
+                <div className="fade-mask"></div>
+              </span>
+            )}
             
             {/* Conditionally render edit and more buttons */}
-            {(isHovered === session._id || activeSession === session._id) && (
+            {((isHovered === session._id || activeSession === session._id) && editingSessionId !== session._id) && (
               <div className="session-actions">
-                <div className="edit-name-button" onClick={(e) => handleEditNameClick(e, session._id)}>
+                <div className="edit-name-button" onClick={() => handleEditNameClick(session._id, session.title)}>
                   <svg t="1706429867923" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7518" width="16" height="16"><path d="M554.666667 128v85.333333H213.333333v597.333334h597.333334v-341.333334h85.333333v341.333334a85.333333 85.333333 0 0 1-85.333333 85.333333H213.333333a85.333333 85.333333 0 0 1-85.333333-85.333333V213.333333a85.333333 85.333333 0 0 1 85.333333-85.333333h341.333334zM397.994667 568.661333l426.666666-426.666666 60.373334 60.373333-426.666667 426.666667-60.373333-60.373334z" fill="#ececf1" p-id="7519"></path></svg>
                 </div>
                 <div className="more-functions-button" onClick={(e) => handleMoreFunctionsClick(e, session._id)}>
@@ -212,6 +288,14 @@ function App() {
 const ChatMessage = ({ message }) => {
   const isBotMessage = message.role === "assistant";
   const isUserMessage = message.role === "user";
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(
+      () => console.log("Text copied to clipboard"),
+      (err) => console.error("Failed to copy text: ", err)
+    );
+  };
+
   return (
     <div className={`chat-message ${isBotMessage ? "chatgpt" : "user"}`}>
       <div className={`avatar ${isBotMessage ? "chatgpt" : "user"}`}>
@@ -236,11 +320,11 @@ const ChatMessage = ({ message }) => {
         )}
         {isBotMessage && (
           <div className="bot-icon-container">
-            <div className="botmsg-icon">
-            <svg t="1705898286996" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15077" width="16" height="16"><path d="M512 42.666667a85.333333 85.333333 0 0 1 85.333333 85.333333h170.666667a128 128 0 0 1 128 128v554.666667a128 128 0 0 1-128 128H256a128 128 0 0 1-128-128V256a128 128 0 0 1 128-128h170.666667a85.333333 85.333333 0 0 1 85.333333-85.333333zM341.333333 192H256A64 64 0 0 0 192 256v554.666667A64 64 0 0 0 256 874.666667h512a64 64 0 0 0 64-64V256A64 64 0 0 0 768 192h-85.333333V256a42.666667 42.666667 0 0 1-42.666667 42.666667H384a42.666667 42.666667 0 0 1-42.666667-42.666667V192z m170.666667 416a32 32 0 1 1 0 64H341.333333a32 32 0 1 1 0-64h170.666667z m170.666667-170.666667a32 32 0 0 1 0 64H341.333333a32 32 0 1 1 0-64h341.333334zM512 106.666667a21.333333 21.333333 0 0 0-21.333333 21.333333 64 64 0 0 1-57.856 63.701333L426.666667 192h-21.333334v42.666667h213.333334v-42.666667H597.333333A64 64 0 0 1 533.333333 128a21.333333 21.333333 0 0 0-21.333333-21.333333z" fill="#8a8a8a" p-id="15078"></path></svg>
+            <div className="botmsg-icon" onClick={() => copyToClipboard(message.content)}>
+              <svg t="1705898286996" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15077" width="16" height="16"><path d="M512 42.666667a85.333333 85.333333 0 0 1 85.333333 85.333333h170.666667a128 128 0 0 1 128 128v554.666667a128 128 0 0 1-128 128H256a128 128 0 0 1-128-128V256a128 128 0 0 1 128-128h170.666667a85.333333 85.333333 0 0 1 85.333333-85.333333zM341.333333 192H256A64 64 0 0 0 192 256v554.666667A64 64 0 0 0 256 874.666667h512a64 64 0 0 0 64-64V256A64 64 0 0 0 768 192h-85.333333V256a42.666667 42.666667 0 0 1-42.666667 42.666667H384a42.666667 42.666667 0 0 1-42.666667-42.666667V192z m170.666667 416a32 32 0 1 1 0 64H341.333333a32 32 0 1 1 0-64h170.666667z m170.666667-170.666667a32 32 0 0 1 0 64H341.333333a32 32 0 1 1 0-64h341.333334zM512 106.666667a21.333333 21.333333 0 0 0-21.333333 21.333333 64 64 0 0 1-57.856 63.701333L426.666667 192h-21.333334v42.666667h213.333334v-42.666667H597.333333A64 64 0 0 1 533.333333 128a21.333333 21.333333 0 0 0-21.333333-21.333333z" fill="#8a8a8a" p-id="15078"></path></svg>
             </div>
             <div className="botmsg-icon">
-            <svg t="1705898016033" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4479" width="16" height="16"><path d="M512 192a320 320 0 1 0 316.544 272.725333c-2.858667-19.370667 11.306667-38.058667 30.890667-38.058666 15.786667 0 29.696 10.922667 32.085333 26.581333A384 384 0 1 1 768 225.792V181.333333a32 32 0 0 1 64 0v128a32 32 0 0 1-32 32h-128a32 32 0 0 1 0-64h57.6a318.890667 318.890667 0 0 0-217.6-85.333333z" fill="#8a8a8a" p-id="4480"></path></svg>
+              <svg t="1705898016033" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4479" width="16" height="16"><path d="M512 192a320 320 0 1 0 316.544 272.725333c-2.858667-19.370667 11.306667-38.058667 30.890667-38.058666 15.786667 0 29.696 10.922667 32.085333 26.581333A384 384 0 1 1 768 225.792V181.333333a32 32 0 0 1 64 0v128a32 32 0 0 1-32 32h-128a32 32 0 0 1 0-64h57.6a318.890667 318.890667 0 0 0-217.6-85.333333z" fill="#8a8a8a" p-id="4480"></path></svg>
             </div>
           </div>
         )}

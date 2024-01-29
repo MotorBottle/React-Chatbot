@@ -99,6 +99,29 @@ app.get('/sessions/:sessionId', async (req, res) => {
   }
 });
 
+app.put('/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+  const { title } = req.body;
+
+  try {
+    // Assuming `updatedAt` is automatically handled by your ORM
+    const updatedSession = await ChatSession.findByIdAndUpdate(
+      sessionId, 
+      { title, updatedAt: new Date() },
+      { new: true } // Return the updated document
+    );
+
+    if (!updatedSession) {
+      return res.status(404).send('Session not found');
+    }
+
+    res.json(updatedSession); // Send back the updated session
+  } catch (error) {
+    console.error('Error updating session:', error);
+    res.status(500).send('Error updating session');
+  }
+});
+
 // Clear Chat History
 app.post('/clear', async (req, res) => {
   const { sessionId } = req.body;
