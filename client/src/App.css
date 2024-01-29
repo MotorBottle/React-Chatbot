@@ -1,0 +1,398 @@
+.App {
+  text-align: center;
+  display: flex;
+  background-color: #282c34;
+  color: white;
+  position: absolute;
+  top: 0; bottom: 0; left: 0; right: 0;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+.sidemenu {
+  position: relative;
+  width: 260px;
+  /* padding: 10px; */
+  flex-direction: column;
+  /* height: 100%; */
+  /* border: 1px solid white; */
+  justify-content: space-between;
+  background-color: #030303;
+}
+
+.app-main-title {
+  display: flex;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+}
+
+.new-chat-button {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  text-align: left;
+  transition: ease 0.05s all;
+  margin-bottom: 12px;
+}
+
+.new-chat-button:hover {
+  border: 1px solid #464752;
+  background-color: #2a2b35;
+}
+
+.new-chat-button span {
+  padding-left: 6px;
+  padding-right: 12px;
+}
+
+.session-list {
+  padding-left: 10px;
+  padding-right: 10px;
+  position: relative;
+  top: 70px;
+  /* margin-top: 14px; */
+  max-height: calc(100% - 154px);
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px;
+  margin-bottom: 1px;
+  border-radius: 8px;
+  cursor: pointer;
+  /* transition: background-color 0.1s ease; */
+  max-width: 223px;
+  height: 16.5px;
+}
+
+.session-item.active {
+  background-color: #343541;
+}
+
+.session-item:hover {
+  background-color: #25252e;
+}
+
+.session-title {
+  position: relative;
+  font-size: 0.9em;
+  margin-left: 3px;
+  text-align: left;
+  white-space: nowrap;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.fade-mask {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  top: 0;
+  width: 1.5rem;
+  background-image: linear-gradient(to left, transparent, #343541 100%);
+}
+
+.session-item.active .fade-mask {
+  background-image: linear-gradient(to right, transparent, #343541 100%);
+}
+
+.session-item:not(.active):not(:hover) .fade-mask {
+  background-image: linear-gradient(to right, transparent, #030303 100%);
+}
+
+.session-item:not(.active):hover .fade-mask {
+  width: 1.5rem;
+  background-image: linear-gradient(to left, #25252e 60%, transparent);
+}
+
+.session-item.active, .session-item.active:hover {
+  background-color: #343541;
+}
+
+.session-item.active:hover .fade-mask {
+  background-image: linear-gradient(to left, transparent, #343541 100%);
+}
+
+.session-actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.edit-name-button {
+  position: relative;
+  height: 100%;
+  max-width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.more-functions-button {
+  position: relative;
+  height: 100%;
+  max-width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.edit-name-button:hover, .more-functions-button:hover {
+  opacity: 50%;
+  transition: opacity 0.08s ease;
+}
+
+.profile-space, .profile-space * {
+  box-sizing: border-box;
+}
+
+
+.profile-space {
+  display: flex;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 94px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  margin: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.user-profile:hover {
+  background-color: #25262e;
+}
+
+.user-avatar {
+  flex-shrink: 0; /* Prevents avatar from shrinking */
+  flex-grow: 0;   /* Prevents avatar from growing */
+  background-color: white;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  border-radius: 50%;
+  height: 34px;
+  width: 34px;
+  margin-right: 10px;
+}
+
+.user-icon-image {
+  width: 34px; /* Adjust the width as needed */
+  height: 34px; /* Adjust the height as needed */
+  object-fit: cover; /* This makes sure the image covers the area, might crop the image */
+  border-radius: 50%; /* Optional: if you want a circular icon */
+}
+
+.user-name {
+  font-size: 0.95em;
+  color: #babfc5;
+  font-weight: bold;
+}
+
+.chatbox {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #343541;
+}
+
+.chat-box-bar {
+  position: relative;
+  display: flex;
+  top: 0;
+  height: 58px;
+}
+
+.chat-box-bar h3 {
+  padding-left: 28px;
+  height: 58px;
+}
+
+.chat-log {
+  /* padding: 24px; */
+  text-align: left;
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: calc(100% - 140px);
+}
+
+/* 滚动条整体部分 */
+::-webkit-scrollbar {
+  width: 7px;  /* 滚动条的宽度 */
+  height: 7px; /* 滚动条的高度，对于水平滚动条而言 */
+}
+
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  background: #666666c2;  /* 滑块的颜色 */
+  border-radius: 5px; /* 滑块的圆角 */
+}
+
+/* 滚动条轨道 */
+::-webkit-scrollbar-track {
+  background: #f1f1f100; /* 轨道的颜色 */
+  border-radius: 5px;  /* 轨道的圆角 */
+}
+
+/* 当滑块悬停时 */
+::-webkit-scrollbar-thumb:hover {
+  background: #646464; /* 滑块的颜色在悬停时 */
+}
+
+.chat-message {
+  display: flex;
+  padding-top: 6px;
+  padding-bottom: 0px;
+  padding-left: 24px;
+  padding-right: 24px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.chat-message:hover .edit-icon {
+  visibility: visible;
+}
+
+.avatar {
+  flex-shrink: 0; /* Prevents avatar from shrinking */
+  flex-grow: 0;   /* Prevents avatar from growing */
+  background-color: white;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  border-radius: 50%;
+  height: 32px;
+  width: 32px;
+}
+
+.avatar.chatgpt {
+  background-color: rgb(17, 143, 111);
+}
+
+.chat-icon-image {
+  width: 32px; /* Adjust the width as needed */
+  height: 32px; /* Adjust the height as needed */
+  object-fit: cover; /* This makes sure the image covers the area, might crop the image */
+  border-radius: 50%; /* Optional: if you want a circular icon */
+}
+
+.message-title {
+  cursor: default;
+  font-weight: bold;
+  margin-bottom: 6px; /* Adjust spacing as needed */
+}
+
+.message-content {
+  margin-top: 4px;
+  padding-left: 20px;
+  padding-right: 40px;
+}
+
+.message-detail {
+  
+}
+
+.edit-icon-container {
+  display: flex;
+  justify-content: flex-start; /* Align icons to the start of the container */
+  font-size: 0.8em;
+  margin-top: 4px;
+}
+
+.edit-icon {
+  cursor: pointer;
+  visibility: hidden;
+  cursor: pointer;
+}
+
+.bot-icon-container {
+  display: flex;
+  justify-content: flex-start; /* Align icons to the start of the container */
+  font-size: 0.8em;
+  margin-top: 6px;
+  margin-bottom: 4px;
+}
+
+.botmsg-icon {
+  cursor: pointer;
+  margin-right: 4px; /* Space between the icons */
+}
+
+.text-input-holder {
+  /* padding: 12px; */
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 88px;
+}
+
+.text-input-textarea {
+  font-size: 1.05em;
+  line-height: 130%;
+  background-color: #343541;
+  box-sizing: border-box;
+  padding: 15px;
+  color: white;
+  width: 80%;
+  max-width: 800px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  text-align: left;
+  margin: 14px;
+  outline: none;
+  resize: none;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
