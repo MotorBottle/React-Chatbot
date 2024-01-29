@@ -12,6 +12,7 @@ function App() {
   const [isHovered, setIsHovered] = useState(null);
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [originalTitle, setOriginalTitle] = useState("");
 
 
   // Function for session-list
@@ -27,47 +28,53 @@ function App() {
   const handleEditNameClick = (sessionId, currentTitle) => {
     setEditingSessionId(sessionId);
     setEditingTitle(currentTitle);
+    setOriginalTitle(currentTitle);
   };
 
   // Function to save new title
   const handleConfirmEdit = async () => {
-    if (editingSessionId && editingTitle.trim() !== "") {
-      // Update the session title in the local state
-      const updatedSessions = sessions.map((session) =>
-        session._id === editingSessionId ? { ...session, title: editingTitle } : session
-      );
-      setSessions(updatedSessions);
-  
-      // Send the update to the server
-      try {
-        const response = await fetch(`http://localhost:3080/sessions/${editingSessionId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ title: editingTitle }),
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to update session title');
-        }
-  
-        const updatedSession = await response.json();
-
+    if (editingTitle !== originalTitle) {
+      if (editingSessionId && editingTitle.trim() !== "") {
+        // Update the session title in the local state
         const updatedSessions = sessions.map((session) =>
-          session._id === editingSessionId ? updatedSession : session
+          session._id === editingSessionId ? { ...session, title: editingTitle } : session
         );
         setSessions(updatedSessions);
-  
-        console.log('Session title updated successfully');
-      } catch (error) {
-        console.error('Error updating session title:', error);
+    
+        // Send the update to the server
+        try {
+          const response = await fetch(`http://localhost:3080/sessions/${editingSessionId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ title: editingTitle }),
+          });
+    
+          if (!response.ok) {
+            throw new Error('Failed to update session title');
+          }
+    
+          const updatedSession = await response.json();
+
+          const updatedSessions = sessions.map((session) =>
+            session._id === editingSessionId ? updatedSession : session
+          );
+          setSessions(updatedSessions);
+    
+          console.log('Session title updated successfully');
+        } catch (error) {
+          console.error('Error updating session title:', error);
+        }
       }
+    
+      // Exit edit mode
+      setEditingSessionId(null);
+      setEditingTitle(""); // Reset the editing title
+    } else {
+      // If title is unchanged, just exit edit mode without updating
+      handleCancelEdit();
     }
-  
-    // Exit edit mode
-    setEditingSessionId(null);
-    setEditingTitle(""); // Reset the editing title
   };
 
   // Function to cancel editing
@@ -224,7 +231,7 @@ function App() {
               onChange={(e) => setEditingTitle(e.target.value)}
               onBlur={handleBlur}
               onKeyDown={handleKeyPress}
-              className="session-edit-input"
+              className="title-edit-input"
               />
             ) : (
               <span

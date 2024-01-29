@@ -139,6 +139,11 @@
   overflow: hidden;
 }
 
+.title-edit-input {
+  background-color: #00000000;
+  color: #f1f1f1;
+}
+
 .fade-mask {
   position: absolute;
   bottom: 0;
