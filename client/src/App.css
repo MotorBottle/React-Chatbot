@@ -158,7 +158,7 @@
 
 .session-item:not(.active):hover .fade-mask {
   width: 1.5rem;
-  background-image: linear-gradient(to left, #25252e 60%, transparent);
+  background-image: linear-gradient(to right, transparent, #25252e 100%);
 }
 
 .session-item.active, .session-item.active:hover {
@@ -166,7 +166,7 @@
 }
 
 .session-item.active:hover .fade-mask {
-  background-image: linear-gradient(to left, transparent, #343541 100%);
+  background-image: linear-gradient(to right, transparent, #343541 100%);
 }
 
 .session-actions {
