@@ -355,15 +355,6 @@ function App() {
               <button className="text-action-button">S</button>
             </form>
           </div>
-          {/* <form onSubmit={handleSubmit}>
-            <input
-            rows="1"
-            value={input}
-            onChange={(e)=> setInput(e.target.value)}
-            className="text-input-textarea"
-            placeholder="Type your message...">
-            </input>
-          </form> */}
         </div>
       </section>
     </div>
