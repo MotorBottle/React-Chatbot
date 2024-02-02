@@ -37,11 +37,11 @@ To use:
 - Fundamental chat functionality
 - Ability to view and continue previous conversations
 - Editing titles for exsiting conversations
+- Deleting conversations
 
 #### In Progress
 
 - Editing categories for conversations
-- Deleting conversations
 - Switching between different models
 - Copying conversation to clipboard
 - Regenerating responses and branching conversations
