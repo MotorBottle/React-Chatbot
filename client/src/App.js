@@ -31,8 +31,7 @@ function App() {
   };
 
   // Function to enter title edit mode
-  const handleEditNameClick = (e, sessionId, currentTitle) => {
-    e.stopPropagation();
+  const handleEditNameClick = (sessionId, currentTitle) => {
     setEditingSessionId(sessionId);
     setEditingTitle(currentTitle);
     setOriginalTitle(currentTitle);
