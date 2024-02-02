@@ -48,4 +48,5 @@ To use:
 - Displaying categories in the sidebar
 - Providing category recommendations
 - Implementing visual branch management for conversation flows
+- Model selection
 - Multiuser
