@@ -31,7 +31,8 @@ function App() {
   };
 
   // Function to enter title edit mode
-  const handleEditNameClick = (sessionId, currentTitle) => {
+  const handleEditNameClick = (e, sessionId, currentTitle) => {
+    e.stopPropagation();
     setEditingSessionId(sessionId);
     setEditingTitle(currentTitle);
     setOriginalTitle(currentTitle);
@@ -41,12 +42,6 @@ function App() {
   const handleConfirmEdit = async () => {
     if (editingTitle !== originalTitle) {
       if (editingSessionId && editingTitle.trim() !== "") {
-        // Update the session title in the local state
-        const updatedSessions = sessions.map((session) =>
-          session._id === editingSessionId ? { ...session, title: editingTitle } : session
-        );
-        setSessions(updatedSessions);
-    
         // Send the update to the server
         try {
           const response = await fetch(`http://localhost:3080/sessions/${editingSessionId}`, {
@@ -62,11 +57,10 @@ function App() {
           }
     
           const updatedSession = await response.json();
-
-          const updatedSessions = sessions.map((session) =>
+          // Update the session title in the local state with the response from the server
+          setSessions(sessions.map((session) =>
             session._id === editingSessionId ? updatedSession : session
-          );
-          setSessions(updatedSessions);
+          ));
     
           console.log('Session title updated successfully');
         } catch (error) {
@@ -122,6 +116,35 @@ function App() {
     setShowMoreActions(false);
     setSelectedSessionForActions(null);
     setIsHovered(null); // Add this line to reset hover state when closing the actions menu
+  };
+
+  const handleDeleteChat = async (sessionId) => {
+    if (window.confirm('Are you sure you want to delete this chat?')) {
+      try {
+        const response = await fetch(`http://localhost:3080/sessions/${sessionId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) {
+          throw new Error('Failed to delete session');
+        }
+        
+        // Remove the deleted session from state
+        setSessions(sessions.filter((session) => session._id !== sessionId));
+  
+        // If the deleted session is the active session, clear the active session
+        if (activeSession === sessionId) {
+          setActiveSession(null);
+          setChatLog([]);
+        }
+  
+        // Close the actions popup
+        setShowMoreActions(false);
+  
+        console.log('Session deleted successfully');
+      } catch (error) {
+        console.error('Error deleting session:', error);
+      }
+    }
   };
 
   useEffect(() => {
@@ -291,7 +314,7 @@ function App() {
                       <ul>
                         <li>Recategorize</li>
                         <li>Share</li>
-                        <li className="chat-delet-action">Delete Chat</li>
+                        <li className="chat-delet-action" onClick={() => handleDeleteChat(session._id)}>Delete Chat</li>
                       </ul>
                     </div>
                   )}
@@ -320,7 +343,19 @@ function App() {
           ))}
         </div>
         <div className="text-input-holder">
-          <form onSubmit={handleSubmit}>
+          <div className="text-input-textarea">
+            <form onSubmit={handleSubmit}>
+              <input
+              // rows="1"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              className="text-input"
+              placeholder="Type your message..."
+              />
+              <button className="text-action-button">S</button>
+            </form>
+          </div>
+          {/* <form onSubmit={handleSubmit}>
             <input
             rows="1"
             value={input}
@@ -328,7 +363,7 @@ function App() {
             className="text-input-textarea"
             placeholder="Type your message...">
             </input>
-          </form>
+          </form> */}
         </div>
       </section>
     </div>

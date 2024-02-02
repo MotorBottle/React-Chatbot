@@ -122,6 +122,20 @@ app.put('/sessions/:sessionId', async (req, res) => {
   }
 });
 
+app.delete('/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+  try {
+    const deletedSession = await ChatSession.findByIdAndDelete(sessionId);
+    if (!deletedSession) {
+      return res.status(404).send('Session not found');
+    }
+    res.status(200).send('Session deleted');
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    res.status(500).send('Error deleting session');
+  }
+});
+
 // Clear Chat History
 app.post('/clear', async (req, res) => {
   const { sessionId } = req.body;
