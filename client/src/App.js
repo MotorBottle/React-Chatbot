@@ -210,7 +210,6 @@ function App() {
       // Fetch the updated chat log for the current session to include the new message
       await fetchChatLog(currentSessionId);
       fetchSessions();
-      // setInput(""); // NOTE: moved to sendMessage already
     } catch (error) {
       console.error("Error handling submit:", error);
     }
@@ -235,11 +234,35 @@ function App() {
       console.error("Error creating new session:", error);
     }
   }
+
+  const updateSessionTitle = async (sessionId, initialContent) => {
+  try {
+    const response = await fetch('http://localhost:3080/auto-title', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, initialContent }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update session title');
+    }
+
+    // Assuming the updated session is returned in the response
+    const updatedSession = await response.json();
+    console.log('Session title updated:', updatedSession.title);
+
+    // Refresh session list to reflect the updated title
+    fetchSessions(); // Assuming fetchSessions is a function that updates your session list in the frontend
+  } catch (error) {
+    console.error('Error updating session title:', error);
+  }
+};
   
   async function sendMessage(userMessage) {
     try {
       // Add the user's message to the chat log immediately with the correct role
       setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
+      const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
       setInput(""); //Clear the input after sending
 
       const response = await fetch("http://localhost:3080/message", {
@@ -255,6 +278,15 @@ function App() {
       const { reply } = await response.json();
       // Add the bot's reply to the chat log with the correct role
       setChatLog(prevLog => [...prevLog, { role: "assistant", content: reply }]);
+
+      const finalNewChatLog = [...newChatLogWithUserMessage, { role: "assistant", content: reply }];
+      // setChatLog(finalNewChatLog);
+
+      console.log(finalNewChatLog.length);
+
+      if (finalNewChatLog.length === 2) {
+        updateSessionTitle(userMessage.sessionId, userMessage.message);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     }

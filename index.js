@@ -48,6 +48,39 @@ app.post('/new-session', async (req, res) => {
   res.json({ id: newSession._id, title: newSession.title, category: newSession.category, updatedAt: newSession.updatedAt });
 });
 
+// Auto create title after 1st rd of conversation
+app.post('/auto-title', async (req, res) => {
+  const { sessionId, initialContent } = req.body;
+
+  try {
+    // Use GPT to generate a title based on the initial conversation content
+    const titleResponse = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: `Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief and do not include double quotation marks in the title. The title should clearly indicate the main topic or theme of the discussion. Content: ${initialContent}`}],
+    });
+
+    const title = titleResponse.choices[0].message.content;
+
+    // Update the session title in the database
+    const updatedSession = await ChatSession.findByIdAndUpdate(
+      sessionId,
+      { title },
+      { new: true }
+    );
+
+    if (!updatedSession) {
+      return res.status(404).send('Session not found');
+    }
+
+    // Send back the updated session as a response
+    res.json(updatedSession);
+  } catch (error) {
+    console.error('Error updating session title:', error);
+    res.status(500).send('Error updating session title');
+  }
+});
+
+
 // Post Message
 app.post('/message', async (req, res) => {
   console.log('Received request:', req.body);
