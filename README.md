@@ -38,15 +38,17 @@ To use:
 - Ability to view and continue previous conversations
 - Editing titles for exsiting conversations
 - Deleting conversations
+- Auto generate title for conversations
+- Copying responses to clipboard
 
 #### In Progress
 
 - Editing categories for conversations
 - Switching between different models
-- Copying conversation to clipboard
 - Regenerating responses and branching conversations
 - Displaying categories in the sidebar
 - Providing category recommendations
 - Implementing visual branch management for conversation flows
 - Model selection
 - Multiuser
+- Copying fullconversation to clipboard
