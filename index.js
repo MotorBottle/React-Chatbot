@@ -56,7 +56,7 @@ app.post('/auto-title', async (req, res) => {
     // Use GPT to generate a title based on the initial conversation content
     const titleResponse = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
-      messages: [{ role: "user", content: `Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief and do not include double quotation marks in the title. The title should clearly indicate the main topic or theme of the discussion. Content: ${initialContent}`}],
+      messages: [{ role: "user", content: `Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or theme of the discussion. The title's language should be the same as user's input, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title. Content: ${initialContent}`}],
     });
 
     const title = titleResponse.choices[0].message.content;
