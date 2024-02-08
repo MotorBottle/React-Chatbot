@@ -458,6 +458,7 @@
   border: 1px solid #000000;
   border-radius: 5px;
   overflow: hidden;
+  font-size: 0.9em;
 }
 
 .code-header {
@@ -466,12 +467,18 @@
   display: flex;
   justify-content: space-between;
   font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-  font-size: 0.9em;
   color: #ffffff;
 }
 
 .copy-block-bar {
   cursor: pointer;
+}
+
+.inline-code {
+  background-color: #f5f5f5; /* Light grey background */
+  padding: 2px 4px; /* Smaller padding for inline code */
+  border-radius: 4px; /* Rounded corners */
+  font-family: Consolas, "Courier New", monospace; /* Monospaced font */
 }
 
 
