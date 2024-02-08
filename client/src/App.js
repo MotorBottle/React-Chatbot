@@ -2,6 +2,11 @@ import logo from './logo.svg';
 import './normal.css';
 import './App.css';
 import React, { useState, useEffect, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+// Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
+import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+
 
 
 function App() {
@@ -392,6 +397,31 @@ function App() {
   );
 }
 
+const CodeBlock = ({ language, value }) => {
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value).then(
+      () => console.log('Content copied to clipboard!'),
+      (err) => console.error('Failed to copy content: ', err)
+    );
+  };
+
+  return (
+    <div className="code-container">
+      <div className="code-header">
+        <span className="code-language-block-bar">{language}</span>
+        <div className="copy-block-bar" onClick={handleCopy}>Copy</div>
+      </div>
+      <SyntaxHighlighter
+      language={language}
+      style={a11yDark}
+      customStyle={{ margin: 0 }} // Remove margin from the <pre> tag
+      >
+        {value}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
+
 const ChatMessage = ({ message }) => {
   const isBotMessage = message.role === "assistant";
   const isUserMessage = message.role === "user";
@@ -416,7 +446,27 @@ const ChatMessage = ({ message }) => {
       <div className="message-content">
         <div className="message-title">{isBotMessage ? "ChatBot" : "Me"}</div>
         <div className="message-detail">
-          {message.content}
+          {isBotMessage ? (
+            // Render bot's markdown reply
+            <ReactMarkdown
+              children={message.content}
+              components={{
+                code({ node, inline, className, children, ...props }) {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline && match ? (
+                    <CodeBlock language={match[1]} value={String(children).replace(/\n$/, '')} {...props} />
+                  ) : (
+                    <code className={className} {...props}>
+                      {children}
+                    </code>
+                  );
+                },
+              }}
+            />
+          ) : (
+            // Render user's message as plain text
+            message.content
+          )}
         </div>
         {isUserMessage && (
           <div className="edit-icon-container">

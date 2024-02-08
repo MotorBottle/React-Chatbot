@@ -29,7 +29,7 @@ To use:
 
 ### Development Progress
 
-![Alt text](image.png)
+![alt text](image-1.png)
 
 #### Completed Features
 
@@ -40,6 +40,7 @@ To use:
 - Deleting conversations
 - Auto generate title for conversations
 - Copying responses to clipboard
+- Displaying bot's replies in markdown style and codes in code blocks
 
 #### In Progress
 

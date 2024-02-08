@@ -454,6 +454,27 @@
   margin-right: 4px; /* Space between the icons */
 }
 
+.code-container {
+  border: 1px solid #000000;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.code-header {
+  background-color: #202123;
+  padding: 7px 10px;
+  display: flex;
+  justify-content: space-between;
+  font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+  font-size: 0.9em;
+  color: #ffffff;
+}
+
+.copy-block-bar {
+  cursor: pointer;
+}
+
+
 .text-input-holder {
   position: absolute;
   display: flex;
