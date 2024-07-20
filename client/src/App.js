@@ -7,7 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-
+const models = ["gpt-3.5-turbo", "gemma2:27b-instruct-q8_0", "llama3:70b"];
 
 function App() {
   const [input, setInput] = useState("");
@@ -18,10 +18,90 @@ function App() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [originalTitle, setOriginalTitle] = useState("");
+  const [isTitleEditing, setIsTitleEditing] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [selectedSessionForActions, setSelectedSessionForActions] = useState(null);
+  const [selectedModel, setSelectedModel] = useState(models[0]);
   const moreActionsRef = useRef(null);
+  const textareaRef = useRef(null);
 
+  // 调整textarea高度的函数
+  const adjustTextareaHeight = () => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = "auto"; // 重置高度
+      // 确保高度不超过最大值144px
+      // textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
+      const newHeight = Math.max(21.83, Math.min(textarea.scrollHeight, 144));
+      textarea.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [input]); // 每次输入变化时调用
+
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!isTitleEditing) {
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          // 在光标位置插入换行符
+          e.preventDefault();
+          const textarea = textareaRef.current;
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          const newValue = input.substring(0, start) + '\n' + input.substring(end);
+          setInput(newValue);
+          textarea.setSelectionRange(start + 1, start + 1);
+        } else {
+          // 提交表单
+          e.preventDefault();
+          handleSubmit(e);
+        }
+      }
+    }
+  };
+
+
+  // 获取当前模型
+  useEffect(() => {
+    async function fetchCurrentModel() {
+      try {
+        const response = await fetch('http://localhost:3080/current-model');
+        const data = await response.json();
+        setSelectedModel(data.model);
+      } catch (error) {
+        console.error('Error fetching current model:', error);
+      }
+    }
+    fetchCurrentModel();
+  }, []);
+
+  const handleModelChange = async (e) => {
+    const selectedModel = e.target.value;
+    setSelectedModel(selectedModel);
+    
+    try {
+      const response = await fetch('http://localhost:3080/set-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: selectedModel }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update model');
+      }
+
+      const result = await response.json();
+      console.log(result.message, result.model);
+    } catch (error) {
+      console.error('Error updating model:', error);
+    }
+  };
 
   // Function for session-list
   const handleMouseEnter = (sessionId) => {
@@ -40,6 +120,7 @@ function App() {
     setEditingSessionId(sessionId);
     setEditingTitle(currentTitle);
     setOriginalTitle(currentTitle);
+    setIsTitleEditing(true);
   };
 
   // Function to save new title
@@ -75,6 +156,7 @@ function App() {
       // Exit edit mode
       setEditingSessionId(null);
       setEditingTitle(""); // Reset the editing title
+      setIsTitleEditing(false);
     } else {
       // If title is unchanged, just exit edit mode without updating
       handleCancelEdit();
@@ -269,6 +351,7 @@ function App() {
       setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
       const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
       setInput(""); //Clear the input after sending
+      adjustTextareaHeight();
 
       const response = await fetch("http://localhost:3080/message", {
         method: "POST",
@@ -296,8 +379,6 @@ function App() {
       console.error("Error sending message:", error);
     }
   }
-  
-  
   
   return (
     <div className="App">
@@ -370,8 +451,14 @@ function App() {
       </aside>
       <section className="chatbox">
         <div className="chat-box-bar">
-          <h3>GPT-3.5-Turbo</h3>
-
+          <h3>Current Model: </h3>
+          <div className="custom-select">
+            <select className="model-selection" value={selectedModel} onChange={handleModelChange}>
+              {models.map((model) => (
+                <option key={model} value={model}>{model}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="chat-log">
           {chatLog.map((message, index) => (
@@ -380,13 +467,16 @@ function App() {
         </div>
         <div className="text-input-holder">
           <div className="text-input-textarea">
-            <form onSubmit={handleSubmit}>
-              <input
-              // rows="1"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="text-input"
-              placeholder="Type your message..."
+            <form id="submitform" onSubmit={handleSubmit}>
+              <textarea
+                form ="submitform"
+                ref={textareaRef}
+                value={input}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                className="text-input"
+                placeholder="Type your message..."
+                rows={1}
               />
               <button className="text-action-button">S</button>
             </form>
@@ -445,7 +535,7 @@ const ChatMessage = ({ message }) => {
       </div>
       <div className="message-content">
         <div className="message-title">{isBotMessage ? "ChatBot" : "Me"}</div>
-        <div className="message-detail">
+        <div className={`message-detail ${isBotMessage ? '' : 'user-message'}`}>
           {isBotMessage ? (
             // Render bot's markdown reply
             <ReactMarkdown

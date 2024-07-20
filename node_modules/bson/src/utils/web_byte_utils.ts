@@ -1,4 +1,6 @@
 import { BSONError } from '../error';
+import { tryReadBasicLatin } from './latin';
+import { parseUtf8 } from '../parse_utf8';
 
 type TextDecoder = {
   readonly encoding: string;
@@ -108,6 +110,10 @@ export const webByteUtils = {
     return new Uint8Array(size);
   },
 
+  allocateUnsafe(size: number): Uint8Array {
+    return webByteUtils.allocate(size);
+  },
+
   equals(a: Uint8Array, b: Uint8Array): boolean {
     if (a.byteLength !== b.byteLength) {
       return false;
@@ -168,21 +174,22 @@ export const webByteUtils = {
     return Array.from(uint8array, byte => byte.toString(16).padStart(2, '0')).join('');
   },
 
-  fromUTF8(text: string): Uint8Array {
-    return new TextEncoder().encode(text);
-  },
+  toUTF8(uint8array: Uint8Array, start: number, end: number, fatal: boolean): string {
+    const basicLatin = end - start <= 20 ? tryReadBasicLatin(uint8array, start, end) : null;
+    if (basicLatin != null) {
+      return basicLatin;
+    }
 
-  toUTF8(uint8array: Uint8Array, start: number, end: number): string {
-    return new TextDecoder('utf8', { fatal: false }).decode(uint8array.slice(start, end));
+    return parseUtf8(uint8array, start, end, fatal);
   },
 
   utf8ByteLength(input: string): number {
-    return webByteUtils.fromUTF8(input).byteLength;
+    return new TextEncoder().encode(input).byteLength;
   },
 
-  encodeUTF8Into(buffer: Uint8Array, source: string, byteOffset: number): number {
-    const bytes = webByteUtils.fromUTF8(source);
-    buffer.set(bytes, byteOffset);
+  encodeUTF8Into(uint8array: Uint8Array, source: string, byteOffset: number): number {
+    const bytes = new TextEncoder().encode(source);
+    uint8array.set(bytes, byteOffset);
     return bytes.byteLength;
   },
 

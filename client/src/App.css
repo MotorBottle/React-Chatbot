@@ -335,8 +335,51 @@
 }
 
 .chat-box-bar h3 {
-  padding-left: 28px;
+  margin: 18px 12px 0px 28px;
   height: 58px;
+}
+
+.custom-select {
+  margin: 18px 0px 0px 0px;
+  font-weight: bold;
+  color: white;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  height: 58px;
+  position: relative;
+  display: inline-block;
+}
+
+.custom-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  font-size: 1.17em;
+  font-weight: bold;
+  color: white;
+  padding-right: 1em;
+  cursor: pointer;
+}
+.custom-select select:hover {
+  color: rgb(172, 172, 172);
+}
+
+.custom-select select::-ms-expand {
+  display: none;
+}
+
+.custom-select select option {
+  background-color: black;
+  color: white;
+}
+
+.custom-select select:focus option {
+  background-color: black;
+  color: white;
 }
 
 .chat-log {
@@ -424,8 +467,8 @@
   padding-right: 40px;
 }
 
-.message-detail {
-  
+.message-detail.user-message {
+  white-space: pre-wrap; /* 保留换行符并在适当位置换行 */
 }
 
 .edit-icon-container {
@@ -491,12 +534,15 @@
   display: flex;
   justify-content: center; /* Center children horizontally */
   align-items: center; /* Center children vertically */
+  align-items: flex-end;
 }
 
 .text-input-textarea {
+  margin-bottom: 18px;
   display: flex;
   position: relative;
   align-items: center;
+  align-items: flex-end;
   background-color: #343541;
   color: white;
   width: 80%;
@@ -516,17 +562,44 @@
 }
 
 .text-input {
+  padding-bottom: 0;
   font-size: 1.05em;
   line-height: 130%;
-  background-color: transparent; /* Maintain the background of the parent */
-  border: none; /* Remove input border */
+  background-color: transparent;
+  border: none;
   color: white;
   outline: none;
   margin: 15px;
   margin-right: 12px; /* Space before the send button */
   flex-grow: 1;
   position: relative;
+  max-height: 144px;
+  overflow: auto;
   width: 100%;
+  resize: none;
+}
+
+/* 滚动条整体部分 */
+.text-input::-webkit-scrollbar {
+  width: 6px;  /* 滚动条的宽度 */
+  height: 6px; /* 滚动条的高度，对于水平滚动条而言 */
+}
+
+/* 滚动条滑块 */
+.text-input::-webkit-scrollbar-thumb {
+  background: #9e9e9e8e;
+  border-radius: 5px;
+}
+
+/* 滚动条轨道 */
+.text-input::-webkit-scrollbar-track {
+  background: #f1f1f100;
+  border-radius: 5px;
+}
+
+/* 当滑块悬停时 */
+.text-input::-webkit-scrollbar-thumb:hover {
+  background: #b1b1b1b4;
 }
 
 .text-action-button {

@@ -29,7 +29,7 @@ To use:
 
 ### Development Progress
 
-![alt text](image-1.png)
+![alt text](image.png)
 
 #### Completed Features
 
@@ -41,15 +41,14 @@ To use:
 - Auto generate title for conversations
 - Copying responses to clipboard
 - Displaying bot's replies in markdown style and codes in code blocks
+- Switching between different models
 
 #### In Progress
 
 - Editing categories for conversations
-- Switching between different models
 - Regenerating responses and branching conversations
 - Displaying categories in the sidebar
 - Providing category recommendations
 - Implementing visual branch management for conversation flows
-- Model selection
 - Multiuser
 - Copying fullconversation to clipboard

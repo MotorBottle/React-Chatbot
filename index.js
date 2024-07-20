@@ -2,12 +2,68 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const mongoose = require('mongoose');
-const OpenAI = require("openai");
 require('dotenv').config();
+const fetch = require('node-fetch');
 
+```
+// If you're using official api, use this. 
+const OpenAI = require("openai");
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// And mod the code for creating chat completions as well
+
+// Example of official API
+const response = await openai.chat.completions.create({
+  model: currentModel,
+  max_tokens: 8000,
+  messages: messages.map(m => ({ role: m.role, content: m.content }))
+});
+
+// Example of self-host API (current setup)
+const response = await requestOpenai('/v1/chat/completions', {
+  model: currentModel,
+  max_tokens: 8000,
+  messages: messages.map(m => ({ role: m.role, content: m.content }))
+});
+```
+
+let currentModel = "gpt-3.5-turbo";
+
+// 自定义的 requestOpenai 函数，用于转发请求
+async function requestOpenai(endpoint, body) {
+  const url = new URL(endpoint, process.env.OPENAI_API_URL).toString();
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+  };
+
+  const options = {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  };
+
+  console.log(`Sending request to ${url} with options:`, options);
+
+  const response = await fetch(url, options);
+  const contentType = response.headers.get('content-type');
+  const responseText = await response.text();
+
+  if (!response.ok) {
+    console.error('OpenAI API request failed with status:', response.status);
+    console.error('Response:', responseText);
+    throw new Error(`OpenAI API request failed: ${response.statusText}`);
+  }
+
+  if (!contentType || !contentType.includes('application/json')) {
+    console.error('Invalid response format:', responseText);
+    throw new Error(`Expected application/json but got ${contentType}`);
+  }
+
+  return JSON.parse(responseText);
+}
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -54,8 +110,11 @@ app.post('/auto-title', async (req, res) => {
 
   try {
     // Use GPT to generate a title based on the initial conversation content
-    const titleResponse = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const titleResponse = await requestOpenai('/v1/chat/completions', {
+      // model: "llama3:70b",
+      // model: "gemma2:27b-instruct-q8_0",
+      model: currentModel,
+      max_tokens: 300,
       messages: [{ role: "user", content: `Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or theme of the discussion. The title's language should be the same as user's input, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title. Content: ${initialContent}`}],
     });
 
@@ -96,8 +155,11 @@ app.post('/message', async (req, res) => {
 
     const messages = [...session.messages, { role: "user", content: message }];
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+    const response = await requestOpenai('/v1/chat/completions', {
+      // model: "llama3:70b",
+      // model: "gemma2:27b-instruct-q8_0",
+      model: currentModel,
+      max_tokens: 8000,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
@@ -179,6 +241,22 @@ app.post('/clear', async (req, res) => {
   } catch (error) {
     console.error('Error clearing chat history:', error);
     res.status(500).send('Error clearing chat history');
+  }
+});
+
+// 获取当前模型
+app.get('/current-model', (req, res) => {
+  res.json({ model: currentModel });
+});
+
+// 设置当前模型
+app.post('/set-model', (req, res) => {
+  const { model } = req.body;
+  if (model) {
+    currentModel = model;
+    res.json({ success: true, model: currentModel });
+  } else {
+    res.status(400).json({ success: false, message: 'Model name is required' });
   }
 });
 
