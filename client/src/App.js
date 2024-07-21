@@ -372,7 +372,7 @@ function App() {
 
       console.log(finalNewChatLog.length);
 
-      if (finalNewChatLog.length === 2) {
+      if (finalNewChatLog.length <= 3) {
         updateSessionTitle(userMessage.sessionId, userMessage.message);
       }
     } catch (error) {
