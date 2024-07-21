@@ -24,6 +24,7 @@ function App() {
   const [selectedModel, setSelectedModel] = useState(models[0]);
   const moreActionsRef = useRef(null);
   const textareaRef = useRef(null);
+  const eventSourceRef = useRef(null);
 
   // 调整textarea高度的函数
   const adjustTextareaHeight = () => {
@@ -345,40 +346,71 @@ function App() {
   }
 };
   
-  async function sendMessage(userMessage) {
-    try {
-      // Add the user's message to the chat log immediately with the correct role
-      setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
-      const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
-      setInput(""); //Clear the input after sending
-      adjustTextareaHeight();
+async function sendMessage(userMessage) {
+  try {
+    // Add the user's message to the chat log immediately with the correct role
+    setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
+    const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
+    setInput(""); //Clear the input after sending
+    adjustTextareaHeight();
 
-      const response = await fetch("http://localhost:3080/message", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userMessage),
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      
-      const { reply } = await response.json();
-      // Add the bot's reply to the chat log with the correct role
-      setChatLog(prevLog => [...prevLog, { role: "assistant", content: reply }]);
-
-      const finalNewChatLog = [...newChatLogWithUserMessage, { role: "assistant", content: reply }];
-      // setChatLog(finalNewChatLog);
-
-      console.log(finalNewChatLog.length);
-
-      if (finalNewChatLog.length <= 3) {
-        updateSessionTitle(userMessage.sessionId, userMessage.message);
-      }
-    } catch (error) {
-      console.error("Error sending message:", error);
+    // Clear previous EventSource if any
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
     }
+
+    await fetch("http://localhost:3080/message", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(userMessage),
+    });
+
+    eventSourceRef.current = new EventSource(`http://localhost:3080/stream-message?sessionId=${userMessage.sessionId}`);
+    let botReply = '';
+    let lastIndex = newChatLogWithUserMessage.length;
+
+    eventSourceRef.current.onmessage = function (event) {
+      if (event.data === '[DONE]') {
+        eventSourceRef.current.close();
+        const finalNewChatLog = [...newChatLogWithUserMessage, { role: "assistant", content: botReply }];
+        console.log(finalNewChatLog.length);
+
+        if (finalNewChatLog.length <= 3) {
+          updateSessionTitle(userMessage.sessionId, userMessage.message);
+        }
+        return;
+      }
+
+      const messageData = JSON.parse(event.data);
+      const deltaContent = messageData.choices[0].delta?.content || '';
+      botReply += deltaContent;
+
+      setChatLog(prevLog => {
+        const newLog = [...prevLog];
+        const botMessageIndex = newLog.findIndex((msg, index) => index === lastIndex);
+
+        if (botMessageIndex !== -1) {
+          newLog[botMessageIndex].content = botReply;
+        } else {
+          newLog.push({ role: "assistant", content: botReply, complete: false });
+        }
+
+        return newLog;
+      });
+    };
+
+    eventSourceRef.current.onerror = function (event) {
+      console.error("EventSource failed:", event);
+      eventSourceRef.current.close();
+    };
+
+    eventSourceRef.current.onclose = function () {
+      console.log('Stream closed');
+    };
+  } catch (error) {
+    console.error("Error sending message:", error);
   }
+}
   
   return (
     <div className="App">

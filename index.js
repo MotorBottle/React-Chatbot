@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 const fetch = require('node-fetch');
 
-```
+/*
 // If you're using official api, use this. 
 const OpenAI = require("openai");
 const openai = new OpenAI({
@@ -27,7 +27,7 @@ const response = await requestOpenai('/v1/chat/completions', {
   max_tokens: 8000,
   messages: messages.map(m => ({ role: m.role, content: m.content }))
 });
-```
+*/
 
 let currentModel = "gpt-3.5-turbo";
 
@@ -49,20 +49,23 @@ async function requestOpenai(endpoint, body) {
 
   const response = await fetch(url, options);
   const contentType = response.headers.get('content-type');
-  const responseText = await response.text();
 
   if (!response.ok) {
+    const responseText = await response.text();
     console.error('OpenAI API request failed with status:', response.status);
     console.error('Response:', responseText);
     throw new Error(`OpenAI API request failed: ${response.statusText}`);
   }
 
-  if (!contentType || !contentType.includes('application/json')) {
-    console.error('Invalid response format:', responseText);
-    throw new Error(`Expected application/json but got ${contentType}`);
+  if (contentType.includes('application/json')) {
+    return response.json();
   }
 
-  return JSON.parse(responseText);
+  if (contentType.includes('text/event-stream')) {
+    return response.body;
+  }
+
+  throw new Error(`Expected application/json or text/event-stream but got ${contentType}`);
 }
 
 // Connect to MongoDB
@@ -111,11 +114,9 @@ app.post('/auto-title', async (req, res) => {
   try {
     // Use GPT to generate a title based on the initial conversation content
     const titleResponse = await requestOpenai('/v1/chat/completions', {
-      // model: "llama3:70b",
-      // model: "gemma2:27b-instruct-q8_0",
       model: currentModel,
       max_tokens: 300,
-      messages: [{ role: "user", content: `Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or theme of the discussion. The title's language should be the same as user's input, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title. Content: ${initialContent}`}],
+      messages: [{ role: "System", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
     });
 
     const title = titleResponse.choices[0].message.content;
@@ -154,25 +155,88 @@ app.post('/message', async (req, res) => {
     if (!session) return res.status(404).send('Session not found');
 
     const messages = [...session.messages, { role: "user", content: message }];
+    
+    // Update the session with the user's message immediately
+    session.messages = messages;
+    session.updatedAt = new Date();
+    await session.save();
 
-    const response = await requestOpenai('/v1/chat/completions', {
-      // model: "llama3:70b",
-      // model: "gemma2:27b-instruct-q8_0",
+    res.status(200).send('Message received');
+  } catch (error) {
+    console.error('Error with OpenAI API or database:', error);
+    res.status(500).send('Error processing request');
+  }
+});
+
+// Stream Message
+app.get('/stream-message', async (req, res) => {
+  const { sessionId } = req.query;
+
+  if (!sessionId) {
+    return res.status(400).send('Session ID is required.');
+  }
+
+  try {
+    const session = await ChatSession.findById(sessionId);
+    if (!session) return res.status(404).send('Session not found');
+
+    const messages = session.messages;
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    const stream = await requestOpenai('/v1/chat/completions', {
       model: currentModel,
       max_tokens: 8000,
+      stream: true,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
-    const botReply = response.choices[0].message.content;
-    messages.push({ role: "assistant", content: botReply });
+    let botReply = '';
 
-    session.messages = messages;
+    stream.on('data', (chunk) => {
+      const chunkString = chunk.toString();
+      const formattedChunkString = chunkString.replace(/^data: /, ''); // Remove 'data: ' prefix
+      // console.log(formattedChunkString);
+      if (formattedChunkString.trim() === '[DONE]') {
+        return;
+      }
+      res.write(`data: ${formattedChunkString}\n\n`);
 
-    session.updatedAt = new Date();
+      // 将流数据解析为JSON，并暂时存储内容
+      try {
+        const parsedChunk = JSON.parse(formattedChunkString);
+        const deltaContent = parsedChunk.choices[0].delta?.content || '';
+        if (deltaContent) {
+          botReply += deltaContent;
+        }
+      } catch (err) {
+        console.error('Failed to parse chunk:', err);
+      }
+    });
 
-    await session.save();
+    stream.on('end', async () => {
+      res.write('data: [DONE]\n\n');
+      res.end();
 
-    res.json({ reply: botReply, sessionId: session._id });
+      if (botReply) {
+        messages.push({ role: "assistant", content: botReply });
+        console.log("Bot Replies: " + botReply);
+      }
+
+      session.messages = messages;
+      session.updatedAt = new Date();
+      await session.save().catch(error => {
+        console.error('Error saving session:', error);
+      });
+    });
+
+    stream.on('error', (error) => {
+      console.error('Stream error:', error);
+      res.status(500).send('Stream error');
+    });
+
   } catch (error) {
     console.error('Error with OpenAI API or database:', error);
     res.status(500).send('Error processing request');
