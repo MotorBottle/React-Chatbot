@@ -42,6 +42,7 @@ To use:
 - Copying responses to clipboard
 - Displaying bot's replies in markdown style and codes in code blocks
 - Switching between different models
+- Streamed bot reply
 
 #### In Progress
 
