@@ -339,8 +339,8 @@
   height: 58px;
 }
 
-.custom-select {
-  margin: 18px 0px 0px 0px;
+.bar-objects {
+  margin: 18px 12px 0px 0px;
   font-weight: bold;
   color: white;
   background: transparent;
@@ -352,7 +352,7 @@
   display: inline-block;
 }
 
-.custom-select select {
+.bar-objects select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -364,22 +364,44 @@
   padding-right: 1em;
   cursor: pointer;
 }
-.custom-select select:hover {
+
+.bar-objects select:hover {
   color: rgb(172, 172, 172);
 }
 
-.custom-select select::-ms-expand {
+.bar-objects select::-ms-expand {
   display: none;
 }
 
-.custom-select select option {
+.bar-objects select option {
   background-color: black;
   color: white;
 }
 
-.custom-select select:focus option {
+.bar-objects select:focus option {
   background-color: black;
   color: white;
+}
+
+#sys-prompt {
+  margin: 15px 12px 0px 0px;
+  position: absolute;
+  right: 28px;
+}
+
+.bar-objects button {
+  padding: 4px 12px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.082);
+  color: white;
+  border: none;
+  font-size: 1.05em;
+  font-weight: 550;
+}
+
+.bar-objects button:hover {
+  background-color: #ffffff2a;
+  cursor: pointer;
 }
 
 .chat-log {
@@ -388,6 +410,10 @@
   flex-grow: 1;
   overflow-y: auto;
   max-height: calc(100% - 140px);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 确保子元素居中 */
+  width: 100%;
 }
 
 /* 滚动条整体部分 */
@@ -415,13 +441,10 @@
 
 .chat-message {
   display: flex;
-  padding-top: 6px;
-  padding-bottom: 0px;
-  padding-left: 24px;
-  padding-right: 24px;
+  padding: 6px 24px 0px 24px;
+  width: 100%;
   max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  box-sizing: border-box; /* 确保padding包含在宽度内 */
 }
 
 .chat-message:hover .edit-icon {
@@ -462,9 +485,14 @@
 }
 
 .message-content {
+  width: 100%;
   margin-top: 4px;
   padding-left: 20px;
   padding-right: 40px;
+}
+
+.message-detail {
+  width: 100%;
 }
 
 .message-detail.user-message {
@@ -502,6 +530,8 @@
   border-radius: 5px;
   overflow: hidden;
   font-size: 0.9em;
+  width: 100%; /* 确保宽度填满父容器 */
+  box-sizing: border-box; /* 确保padding包含在宽度内 */
 }
 
 .code-header {
@@ -511,6 +541,12 @@
   justify-content: space-between;
   font-family: "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
   color: #ffffff;
+}
+
+pre {
+  /* width: 100%; */
+  box-sizing: border-box; /* 确保 padding 包含在宽度内 */
+  overflow: auto; /* 确保内容可滚动 */
 }
 
 .copy-block-bar {
@@ -573,7 +609,7 @@
   margin-right: 12px; /* Space before the send button */
   flex-grow: 1;
   position: relative;
-  max-height: 144px;
+  max-height: 256px;
   overflow: auto;
   width: 100%;
   resize: none;

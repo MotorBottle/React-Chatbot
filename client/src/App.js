@@ -7,7 +7,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const models = ["gpt-3.5-turbo", "gemma2:27b-instruct-q8_0", "llama3:70b"];
+const models = ["gpt-3.5-turbo", "gemma2:27b-instruct-q8_0", "llama3:70b", "qwen2:72b"];
 
 function App() {
   const [input, setInput] = useState("");
@@ -33,7 +33,7 @@ function App() {
       textarea.style.height = "auto"; // 重置高度
       // 确保高度不超过最大值144px
       // textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
-      const newHeight = Math.max(21.83, Math.min(textarea.scrollHeight, 144));
+      const newHeight = Math.max(21.83, Math.min(textarea.scrollHeight, 256));
       textarea.style.height = `${newHeight}px`;
     }
   };
@@ -341,76 +341,102 @@ function App() {
 
     // Refresh session list to reflect the updated title
     fetchSessions(); // Assuming fetchSessions is a function that updates your session list in the frontend
-  } catch (error) {
-    console.error('Error updating session title:', error);
-  }
-};
-  
-async function sendMessage(userMessage) {
-  try {
-    // Add the user's message to the chat log immediately with the correct role
-    setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
-    const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
-    setInput(""); //Clear the input after sending
-    adjustTextareaHeight();
-
-    // Clear previous EventSource if any
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
+    } catch (error) {
+      console.error('Error updating session title:', error);
     }
+  };
+  
+  async function sendMessage(userMessage) {
+    try {
+      // Add the user's message to the chat log immediately with the correct role
+      setChatLog(prevLog => [...prevLog, { role: "user", content: userMessage.message }]);
+      const newChatLogWithUserMessage = [...chatLog, { role: "user", content: userMessage.message }];
+      setInput(""); //Clear the input after sending
+      adjustTextareaHeight();
 
-    await fetch("http://localhost:3080/message", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(userMessage),
-    });
-
-    eventSourceRef.current = new EventSource(`http://localhost:3080/stream-message?sessionId=${userMessage.sessionId}`);
-    let botReply = '';
-    let lastIndex = newChatLogWithUserMessage.length;
-
-    eventSourceRef.current.onmessage = function (event) {
-      if (event.data === '[DONE]') {
+      // Clear previous EventSource if any
+      if (eventSourceRef.current) {
         eventSourceRef.current.close();
-        const finalNewChatLog = [...newChatLogWithUserMessage, { role: "assistant", content: botReply }];
-        console.log(finalNewChatLog.length);
-
-        if (finalNewChatLog.length <= 3) {
-          updateSessionTitle(userMessage.sessionId, userMessage.message);
-        }
-        return;
       }
 
-      const messageData = JSON.parse(event.data);
-      const deltaContent = messageData.choices[0].delta?.content || '';
-      botReply += deltaContent;
+      await fetch("http://localhost:3080/message", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userMessage),
+      });
 
-      setChatLog(prevLog => {
-        const newLog = [...prevLog];
-        const botMessageIndex = newLog.findIndex((msg, index) => index === lastIndex);
+      eventSourceRef.current = new EventSource(`http://localhost:3080/stream-message?sessionId=${userMessage.sessionId}`);
+      let botReply = '';
+      let lastIndex = newChatLogWithUserMessage.length;
 
-        if (botMessageIndex !== -1) {
-          newLog[botMessageIndex].content = botReply;
-        } else {
-          newLog.push({ role: "assistant", content: botReply, complete: false });
+      eventSourceRef.current.onmessage = function (event) {
+        if (event.data === '[DONE]') {
+          eventSourceRef.current.close();
+          const finalNewChatLog = [...newChatLogWithUserMessage, { role: "assistant", content: botReply }];
+          console.log(finalNewChatLog.length);
+
+          if (finalNewChatLog.length <= 3) {
+            updateSessionTitle(userMessage.sessionId, userMessage.message);
+          }
+          return;
         }
 
-        return newLog;
+        const messageData = JSON.parse(event.data);
+        const deltaContent = messageData.choices[0].delta?.content || '';
+        botReply += deltaContent;
+
+        setChatLog(prevLog => {
+          const newLog = [...prevLog];
+          const botMessageIndex = newLog.findIndex((msg, index) => index === lastIndex);
+
+          if (botMessageIndex !== -1) {
+            newLog[botMessageIndex].content = botReply;
+          } else {
+            newLog.push({ role: "assistant", content: botReply, complete: false });
+          }
+
+          return newLog;
+        });
+      };
+
+      eventSourceRef.current.onerror = function (event) {
+        console.error("EventSource failed:", event);
+        eventSourceRef.current.close();
+      };
+
+      eventSourceRef.current.onclose = function () {
+        console.log('Stream closed');
+      };
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  }
+
+  // 动态调整全局 pre 元素的宽度
+  useEffect(() => {
+    const resizePreElements = () => {
+      const pres = document.querySelectorAll('pre');
+      pres.forEach(pre => {
+        const windowWidth = window.innerWidth;
+        if (windowWidth >= 1060) {
+          pre.style.width = '655px';
+        } else {
+          pre.style.width = `${windowWidth - 405}px`;
+        }
       });
     };
 
-    eventSourceRef.current.onerror = function (event) {
-      console.error("EventSource failed:", event);
-      eventSourceRef.current.close();
-    };
+    // Initial resize
+    resizePreElements();
 
-    eventSourceRef.current.onclose = function () {
-      console.log('Stream closed');
+    // Add event listener for window resize
+    window.addEventListener('resize', resizePreElements);
+
+    // Cleanup event listener on unmount
+    return () => {
+      window.removeEventListener('resize', resizePreElements);
     };
-  } catch (error) {
-    console.error("Error sending message:", error);
-  }
-}
+  }, []);
   
   return (
     <div className="App">
@@ -484,12 +510,15 @@ async function sendMessage(userMessage) {
       <section className="chatbox">
         <div className="chat-box-bar">
           <h3>Current Model: </h3>
-          <div className="custom-select">
+          <div className="bar-objects" id="model-select">
             <select className="model-selection" value={selectedModel} onChange={handleModelChange}>
               {models.map((model) => (
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
+          </div>
+          <div className="bar-objects" id="sys-prompt">
+            <button>System Prompt</button>
           </div>
         </div>
         <div className="chat-log">
