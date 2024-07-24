@@ -115,8 +115,8 @@ app.post('/auto-title', async (req, res) => {
     // Use GPT to generate a title based on the initial conversation content
     const titleResponse = await requestOpenai('/v1/chat/completions', {
       model: currentModel,
-      max_tokens: 300,
-      messages: [{ role: "System", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
+      max_tokens: 100,
+      messages: [{ role: "user", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
     });
 
     const title = titleResponse.choices[0].message.content;
@@ -188,35 +188,72 @@ app.get('/stream-message', async (req, res) => {
 
     const stream = await requestOpenai('/v1/chat/completions', {
       model: currentModel,
-      max_tokens: 8000,
+      max_tokens: 4096,
       stream: true,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
     let botReply = '';
+    let buffer = '';
 
     stream.on('data', (chunk) => {
-      const chunkString = chunk.toString();
-      const formattedChunkString = chunkString.replace(/^data: /, ''); // Remove 'data: ' prefix
-      // console.log(formattedChunkString);
-      if (formattedChunkString.trim() === '[DONE]') {
-        return;
-      }
-      res.write(`data: ${formattedChunkString}\n\n`);
+      buffer += chunk.toString();
 
-      // 将流数据解析为JSON，并暂时存储内容
-      try {
-        const parsedChunk = JSON.parse(formattedChunkString);
-        const deltaContent = parsedChunk.choices[0].delta?.content || '';
-        if (deltaContent) {
-          botReply += deltaContent;
+      let boundary = buffer.indexOf('\n');
+
+      while (boundary !== -1) {
+        let formattedChunkString = buffer.slice(0, boundary).trim();
+
+        buffer = buffer.slice(boundary + 1);
+        boundary = buffer.indexOf('\n');
+
+        // 移除所有行的 'data: ' 前缀
+        if (formattedChunkString.startsWith('data: ')) {
+          formattedChunkString = formattedChunkString.replace(/^data: /, '');
         }
-      } catch (err) {
-        console.error('Failed to parse chunk:', err);
+
+        console.log(formattedChunkString);
+
+        if (formattedChunkString === '') {
+          continue;
+        }
+
+        if (formattedChunkString === '[DONE]') {
+          res.write('data: [DONE]\n\n');
+          res.end();
+          return;
+        }
+
+        try {
+          const parsedChunk = JSON.parse(formattedChunkString);
+          const deltaContent = parsedChunk.choices[0].delta?.content || '';
+          if (deltaContent) {
+            botReply += deltaContent;
+          }
+
+          res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
+        } catch (err) {
+          console.error('Failed to parse chunk:', err);
+        }
       }
     });
 
     stream.on('end', async () => {
+      // 确保缓冲区中的剩余数据也被处理
+      if (buffer.trim() !== '') {
+        try {
+          const parsedChunk = JSON.parse(buffer.trim());
+          const deltaContent = parsedChunk.choices[0].delta?.content || '';
+          if (deltaContent) {
+            botReply += deltaContent;
+          }
+
+          res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
+        } catch (err) {
+          console.error('Failed to parse final chunk:', err);
+        }
+      }
+
       res.write('data: [DONE]\n\n');
       res.end();
 

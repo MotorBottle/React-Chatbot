@@ -7,7 +7,14 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const models = ["gpt-3.5-turbo", "gemma2:27b-instruct-q8_0", "llama3:70b", "qwen2:72b"];
+const models = [
+  "gpt-3.5-turbo",
+  "gemma2:27b-instruct-q8_0",
+  "llama3:70b",
+  "qwen2:72b",
+  "mygemma2",
+  "claude-3-sonnet-20240229"
+];
 
 function App() {
   const [input, setInput] = useState("");
