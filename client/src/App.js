@@ -390,6 +390,7 @@ function App() {
 
         const messageData = JSON.parse(event.data);
         const deltaContent = messageData.choices[0].delta?.content || '';
+        // const deltaContent = messageData.message?.content || '';
         botReply += deltaContent;
 
         setChatLog(prevLog => {
