@@ -12,7 +12,7 @@ const models = [
   "gemma2:27b-instruct-q8_0",
   "llama3:70b",
   "qwen2:72b",
-  "mygemma2",
+  "llama3.1:70b",
   "claude-3-sonnet-20240229"
 ];
 
