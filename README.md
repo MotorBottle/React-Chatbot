@@ -50,7 +50,7 @@ To use:
 - Displaying bot's replies in markdown style and codes in code blocks
 - Switching between different models - 2024/07/20
 - Streamed bot reply - 2024/07/20
-- Added support for Ollama's API calling -2024/07/25
+- Added support for Ollama's Native API calling -2024/07/25
 
 #### In Progress
 
