@@ -93,6 +93,10 @@ app.post('/auto-title', async (req, res) => {
       model: currentModel,
       stream: false,
       messages: [{ role: "user", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
+      options: {
+        // num_predict: 20,
+        num_ctx: 11520
+      }
     });
 
     const title = titleResponse.message.content;

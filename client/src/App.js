@@ -3,16 +3,17 @@ import './normal.css';
 import './App.css';
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const models = [
   "gpt-3.5-turbo",
-  "gemma2:27b-instruct-q8_0",
   "llama3:70b",
   "qwen2:72b",
   "llama3.1:70b",
+  "llama3.1:8b-instruct-fp16",
   "claude-3-sonnet-20240229"
 ];
 
@@ -581,6 +582,42 @@ const CodeBlock = ({ language, value }) => {
   );
 };
 
+const Table = ({ children }) => (
+  <table className="table-container">
+    {children}
+  </table>
+);
+
+const Thead = ({ children }) => (
+  <thead>
+    {children}
+  </thead>
+);
+
+const Tbody = ({ children }) => (
+  <tbody>
+    {children}
+  </tbody>
+);
+
+const Tr = ({ children }) => (
+  <tr>
+    {children}
+  </tr>
+);
+
+const Th = ({ children }) => (
+  <th className="table-header-cell">
+    {children}
+  </th>
+);
+
+const Td = ({ children }) => (
+  <td className="table-data-cell">
+    {children}
+  </td>
+);
+
 const ChatMessage = ({ message }) => {
   const isBotMessage = message.role === "assistant";
   const isUserMessage = message.role === "user";
@@ -609,6 +646,7 @@ const ChatMessage = ({ message }) => {
             // Render bot's markdown reply
             <ReactMarkdown
               children={message.content}
+              remarkPlugins={[remarkGfm]}
               components={{
                 code({ node, inline, className, children, ...props }) {
                   const match = /language-(\w+)/.exec(className || '');
@@ -619,6 +657,24 @@ const ChatMessage = ({ message }) => {
                       {children}
                     </code>
                   );
+                },
+                table({ node, ...props }) {
+                  return <Table {...props}>{props.children}</Table>;
+                },
+                thead({ node, ...props }) {
+                  return <Thead {...props}>{props.children}</Thead>;
+                },
+                tbody({ node, ...props }) {
+                  return <Tbody {...props}>{props.children}</Tbody>;
+                },
+                tr({ node, ...props }) {
+                  return <Tr {...props}>{props.children}</Tr>;
+                },
+                th({ node, ...props }) {
+                  return <Th {...props}>{props.children}</Th>;
+                },
+                td({ node, ...props }) {
+                  return <Td {...props}>{props.children}</Td>;
                 },
               }}
             />
@@ -631,6 +687,9 @@ const ChatMessage = ({ message }) => {
           <div className="edit-icon-container">
             <div className="edit-icon">
               <svg t="1705879506075" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4213" width="16" height="16"><path d="M853.333333 501.333333c-17.066667 0-32 14.933333-32 32v320c0 6.4-4.266667 10.666667-10.666666 10.666667H170.666667c-6.4 0-10.666667-4.266667-10.666667-10.666667V213.333333c0-6.4 4.266667-10.666667 10.666667-10.666666h320c17.066667 0 32-14.933333 32-32s-14.933333-32-32-32H170.666667c-40.533333 0-74.666667 34.133333-74.666667 74.666666v640c0 40.533333 34.133333 74.666667 74.666667 74.666667h640c40.533333 0 74.666667-34.133333 74.666666-74.666667V533.333333c0-17.066667-14.933333-32-32-32z" fill="#8a8a8a" p-id="4214"></path><path d="M405.333333 484.266667l-32 125.866666c-2.133333 10.666667 0 23.466667 8.533334 29.866667 6.4 6.4 14.933333 8.533333 23.466666 8.533333h8.533334l125.866666-32c6.4-2.133333 10.666667-4.266667 14.933334-8.533333l300.8-300.8c38.4-38.4 38.4-102.4 0-140.8-38.4-38.4-102.4-38.4-140.8 0L413.866667 469.333333c-4.266667 4.266667-6.4 8.533333-8.533334 14.933334z m59.733334 23.466666L761.6 213.333333c12.8-12.8 36.266667-12.8 49.066667 0 12.8 12.8 12.8 36.266667 0 49.066667L516.266667 558.933333l-66.133334 17.066667 14.933334-68.266667z" fill="#8a8a8a" p-id="4215"></path></svg>
+            </div>
+            <div className="edit-icon">
+              <svg t="1705898016033" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4479" width="16" height="16"><path d="M512 192a320 320 0 1 0 316.544 272.725333c-2.858667-19.370667 11.306667-38.058667 30.890667-38.058666 15.786667 0 29.696 10.922667 32.085333 26.581333A384 384 0 1 1 768 225.792V181.333333a32 32 0 0 1 64 0v128a32 32 0 0 1-32 32h-128a32 32 0 0 1 0-64h57.6a318.890667 318.890667 0 0 0-217.6-85.333333z" fill="#8a8a8a" p-id="4480"></path></svg>
             </div>
           </div>
         )}

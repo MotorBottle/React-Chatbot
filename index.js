@@ -4,6 +4,13 @@ const cors = require("cors");
 const mongoose = require('mongoose');
 require('dotenv').config();
 const fetch = require('node-fetch');
+// const { default: OpenAI } = require('openai');
+const readline = require('readline');
+
+let APIChannel = "OpenAI";
+// let APIChannel = "Ollama";
+
+let contextWindowSize = 11520;
 
 /*
 // If you're using official api, use this. 
@@ -33,11 +40,23 @@ let currentModel = "gpt-3.5-turbo";
 
 // 自定义的 requestOpenai 函数，用于转发请求
 async function requestOpenai(endpoint, body) {
-  const url = new URL(endpoint, process.env.OPENAI_API_URL).toString();
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-  };
+  let url;
+  let headers;
+
+  if (APIChannel === "OpenAI") {
+    url = new URL(endpoint, process.env.OPENAI_API_URL).toString();
+    headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+    };
+  } else if (APIChannel === "Ollama") {
+    url = new URL(endpoint, process.env.OLLAMA_API_URL).toString();
+    headers = {
+      'Content-Type': 'application/json'
+    };
+  } else {
+    throw new Error('Invalid APIChannel specified');
+  }
 
   const options = {
     method: 'POST',
@@ -61,7 +80,7 @@ async function requestOpenai(endpoint, body) {
     return response.json();
   }
 
-  if (contentType.includes('text/event-stream')) {
+  if (contentType.includes('text/event-stream') || contentType.includes('application/x-ndjson')) {
     return response.body;
   }
 
@@ -112,13 +131,29 @@ app.post('/auto-title', async (req, res) => {
   const { sessionId, initialContent } = req.body;
 
   try {
+    let titleResponse;
+
     // Use GPT to generate a title based on the initial conversation content
-    const titleResponse = await requestOpenai('/v1/chat/completions', {
-      model: currentModel,
-      num_ctx: 11520,
-      max_tokens: 100,
-      messages: [{ role: "user", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
-    });
+    if (APIChannel === "OpenAI") {
+      titleResponse = await requestOpenai('/v1/chat/completions', {
+        model: currentModel,
+        num_ctx: contextWindowSize,
+        max_tokens: 100,
+        messages: [{ role: "user", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
+      });
+    } else if (APIChannel === "Ollama") {
+      titleResponse = await requestOllama('/api/chat', {
+        model: currentModel,
+        stream: false,
+        messages: [{ role: "user", content: `You are acting as a tool for conversation title creation. Create a concise title, preferably under 4 words, that encapsulates the essence of a conversation. Use abbreviations where necessary to keep it brief. The title should clearly indicate the main topic or possible theme of the input. The title's language MUST be the same as the input's language, like "用户问候" for "你好". REMEMBER: DO NOT include double quotation marks in the title, you don't need to reply anything other than the title itself. [Input: ${initialContent}]`}],
+        options: {
+          num_predict: 100,
+          num_ctx: contextWindowSize
+        }
+      });
+    } else {
+      throw new Error('Invalid APIChannel specified');
+    }
 
     const title = titleResponse.choices[0].message.content;
 
@@ -187,94 +222,157 @@ app.get('/stream-message', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    const stream = await requestOpenai('/v1/chat/completions', {
-      model: currentModel,
-      num_ctx: 11520,
-      max_tokens: 4096,
-      stream: true,
-      messages: messages.map(m => ({ role: m.role, content: m.content }))
-    });
+    let stream;
 
-    let botReply = '';
-    let buffer = '';
+    if (APIChannel === "OpenAI") {
+      stream = await requestOpenai('/v1/chat/completions', {
+        model: currentModel,
+        num_ctx: contextWindowSize,
+        max_tokens: 4096,
+        stream: true,
+        messages: messages.map(m => ({ role: m.role, content: m.content }))
+      });
 
-    stream.on('data', (chunk) => {
-      buffer += chunk.toString();
+      let botReply = '';
+      let buffer = '';
 
-      let boundary = buffer.indexOf('\n');
+      stream.on('data', (chunk) => {
+        buffer += chunk.toString();
 
-      while (boundary !== -1) {
-        let formattedChunkString = buffer.slice(0, boundary).trim();
+        let boundary = buffer.indexOf('\n');
 
-        buffer = buffer.slice(boundary + 1);
-        boundary = buffer.indexOf('\n');
+        while (boundary !== -1) {
+          let formattedChunkString = buffer.slice(0, boundary).trim();
 
-        // 移除所有行的 'data: ' 前缀
-        if (formattedChunkString.startsWith('data: ')) {
-          formattedChunkString = formattedChunkString.replace(/^data: /, '');
+          buffer = buffer.slice(boundary + 1);
+          boundary = buffer.indexOf('\n');
+
+          // 移除所有行的 'data: ' 前缀
+          if (formattedChunkString.startsWith('data: ')) {
+            formattedChunkString = formattedChunkString.replace(/^data: /, '');
+          }
+
+          console.log(formattedChunkString);
+
+          if (formattedChunkString === '') {
+            continue;
+          }
+
+          if (formattedChunkString === '[DONE]') {
+            res.write('data: [DONE]\n\n');
+            res.end();
+            return;
+          }
+
+          try {
+            const parsedChunk = JSON.parse(formattedChunkString);
+            const deltaContent = parsedChunk.choices[0].delta?.content || '';
+            if (deltaContent) {
+              botReply += deltaContent;
+            }
+
+            res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
+          } catch (err) {
+            console.error('Failed to parse chunk:', err);
+          }
+        }
+      });
+
+      stream.on('end', async () => {
+        // 确保缓冲区中的剩余数据也被处理
+        if (buffer.trim() !== '') {
+          try {
+            const parsedChunk = JSON.parse(buffer.trim());
+            const deltaContent = parsedChunk.choices[0].delta?.content || '';
+            if (deltaContent) {
+              botReply += deltaContent;
+            }
+
+            res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
+          } catch (err) {
+            console.error('Failed to parse final chunk:', err);
+          }
         }
 
-        console.log(formattedChunkString);
+        res.write('data: [DONE]\n\n');
+        res.end();
 
-        if (formattedChunkString === '') {
-          continue;
+        if (botReply) {
+          messages.push({ role: "assistant", content: botReply });
+          console.log("Bot Replies: " + botReply);
         }
 
-        if (formattedChunkString === '[DONE]') {
-          res.write('data: [DONE]\n\n');
-          res.end();
+        session.messages = messages;
+        session.updatedAt = new Date();
+        await session.save().catch(error => {
+          console.error('Error saving session:', error);
+        });
+      });
+
+      stream.on('error', (error) => {
+        console.error('Stream error:', error);
+        res.status(500).send('Stream error');
+      });
+    } else if (APIChannel === "Ollama") {
+      stream = await requestOpenai('/api/chat', {
+        model: currentModel,
+        stream: true,
+        messages: messages.map(m => ({ role: m.role, content: m.content })),
+        options: {
+          // num_predict: 20,
+          num_ctx: contextWindowSize
+        }
+      });
+  
+      let botReply = '';
+      const rl = readline.createInterface({
+        input: stream,
+        crlfDelay: Infinity
+      });
+  
+      rl.on('line', (line) => {
+        if (line.trim() === '') {
           return;
         }
-
+  
         try {
-          const parsedChunk = JSON.parse(formattedChunkString);
-          const deltaContent = parsedChunk.choices[0].delta?.content || '';
+          const parsedChunk = JSON.parse(line);
+          const deltaContent = parsedChunk.message?.content || '';
+          console.log(parsedChunk);
           if (deltaContent) {
             botReply += deltaContent;
           }
-
+  
           res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
+  
+          if (parsedChunk.done) {
+            res.write('data: [DONE]\n\n');
+            res.end();
+            rl.close();
+          }
         } catch (err) {
           console.error('Failed to parse chunk:', err);
         }
-      }
-    });
-
-    stream.on('end', async () => {
-      // 确保缓冲区中的剩余数据也被处理
-      if (buffer.trim() !== '') {
-        try {
-          const parsedChunk = JSON.parse(buffer.trim());
-          const deltaContent = parsedChunk.choices[0].delta?.content || '';
-          if (deltaContent) {
-            botReply += deltaContent;
-          }
-
-          res.write(`data: ${JSON.stringify(parsedChunk)}\n\n`);
-        } catch (err) {
-          console.error('Failed to parse final chunk:', err);
-        }
-      }
-
-      res.write('data: [DONE]\n\n');
-      res.end();
-
-      if (botReply) {
-        messages.push({ role: "assistant", content: botReply });
-        console.log("Bot Replies: " + botReply);
-      }
-
-      session.messages = messages;
-      session.updatedAt = new Date();
-      await session.save().catch(error => {
-        console.error('Error saving session:', error);
       });
-    });
-
-    stream.on('error', (error) => {
-      console.error('Stream error:', error);
-      res.status(500).send('Stream error');
-    });
+  
+      rl.on('close', async () => {
+        if (botReply) {
+          messages.push({ role: "assistant", content: botReply });
+          console.log("Bot Replies: " + botReply);
+        }
+  
+        session.messages = messages;
+        session.updatedAt = new Date();
+        await session.save().catch(error => {
+          console.error('Error saving session:', error);
+        });
+      });
+  
+      rl.on('error', (error) => {
+        console.error('Stream error:', error);
+        res.status(500).send('Stream error');
+      });
+    }
 
   } catch (error) {
     console.error('Error with OpenAI API or database:', error);

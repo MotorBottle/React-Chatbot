@@ -560,6 +560,19 @@ pre {
   font-family: Consolas, "Courier New", monospace; /* Monospaced font */
 }
 
+.table-container {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-header-cell, .table-data-cell {
+  padding: 10px;
+  border-bottom: 1px solid #cccccc8e;
+}
+
+.table-header-cell {
+  background-color: #f0f0f011;
+}
 
 .text-input-holder {
   position: absolute;

@@ -18,7 +18,7 @@ To use:
    - Open a new terminal, navigate to the client directory (`cd client`), and start the React app with `npm start`..
 
 4. **(Optional) To use Ollama API instead of openai/one-api:**
-   - Start `index_ollama.js` instead of `index.js`
+   - Don't forget to set the URL to your Ollama API base
    - Comment this line in App.js: `const deltaContent = messageData.choices[0].delta?.content || '';`
    - Uncomment the line below the last one: `const deltaContent = messageData.message?.content || '';`
 
@@ -50,7 +50,8 @@ To use:
 - Displaying bot's replies in markdown style and codes in code blocks
 - Switching between different models - 2024/07/20
 - Streamed bot reply - 2024/07/20
-- Added support for Ollama's Native API calling -2024/07/25
+- Added support for Ollama's Native API calling - 2024/07/25
+- Added table rendering for markdown contents - 2024/07/28
 
 #### In Progress
 
