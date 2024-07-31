@@ -7,11 +7,16 @@ import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 // Choose a style theme from react-syntax-highlighter/dist/esm/styles/prism
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import OpenAI from 'openai';
+
+// const APIChannel = "OpenAI";
+const APIChannel = "Ollama";
 
 const models = [
   "gpt-3.5-turbo",
   "llama3:70b",
   "qwen2:72b",
+  "qwen2",
   "llama3.1:70b",
   "llama3.1:8b-instruct-fp16",
   "claude-3-sonnet-20240229"
@@ -390,8 +395,15 @@ function App() {
         }
 
         const messageData = JSON.parse(event.data);
-        const deltaContent = messageData.choices[0].delta?.content || '';
-        // const deltaContent = messageData.message?.content || '';
+        let deltaContent;
+        if (APIChannel === "OpenAI") {
+          deltaContent = messageData.choices[0].delta?.content || '';
+        } else if (APIChannel === "Ollama") {
+          deltaContent = messageData.message?.content || '';
+        } else {
+          throw new Error('Invalid APIChannel specified');
+        }
+        
         botReply += deltaContent;
 
         setChatLog(prevLog => {

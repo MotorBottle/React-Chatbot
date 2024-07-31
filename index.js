@@ -7,10 +7,10 @@ const fetch = require('node-fetch');
 // const { default: OpenAI } = require('openai');
 const readline = require('readline');
 
-let APIChannel = "OpenAI";
-// let APIChannel = "Ollama";
+// let APIChannel = "OpenAI";
+let APIChannel = "Ollama";
 
-let contextWindowSize = 11520;
+let contextWindowSize = 131072;
 
 /*
 // If you're using official api, use this. 
@@ -372,6 +372,8 @@ app.get('/stream-message', async (req, res) => {
         console.error('Stream error:', error);
         res.status(500).send('Stream error');
       });
+    } else {
+      throw new Error('Invalid APIChannel specified');
     }
 
   } catch (error) {
